@@ -171,5 +171,12 @@ export function appById(id: string): AppDef {
  * Illustrative signed-in identity (single SSO account across all apps).
  * Re-exported from the auth layer so the seed has a single source — see
  * `lib/auth/mock-user.ts`. Existing UI imports `CURRENT_USER` from here.
+ *
+ * TODO(phase-2): the UI consumers of CURRENT_USER — `greeting.tsx`,
+ * `config/page.tsx`, `app-subtitle.tsx`, `sindarian-assistant.tsx` — must move
+ * to session-derived identity (useAuth().session) once the profile fields they
+ * read (firstName / phone / department) are sourced from the real provider.
+ * Those fields are NOT in the session token yet, so the seed re-export stays
+ * until the real identity provider carries them.
  */
 export { MOCK_USER as CURRENT_USER } from "@/lib/auth/mock-user";

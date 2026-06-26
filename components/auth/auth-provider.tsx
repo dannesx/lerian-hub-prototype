@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 
-import type { HubSession } from "@/lib/auth/jwt";
+import type { HubSessionClaims } from "@/lib/auth/jwt";
 
 /**
  * Session-backed client auth.
@@ -27,8 +27,12 @@ import type { HubSession } from "@/lib/auth/jwt";
  * every tab resets to anon and routes to `/login` on receipt.
  */
 
-/** The session identity exposed to the client — /api/auth/me's payload shape. */
-export type SessionUser = Omit<HubSession, "iat" | "exp">;
+/**
+ * The session identity exposed to the client — /api/auth/me's payload shape.
+ * Aliased to `HubSessionClaims` (the sign-input / "session minus timing" type)
+ * so the identity shape has ONE declaration shared across the codebase.
+ */
+export type SessionUser = HubSessionClaims;
 
 const AUTH_CHANNEL = "hub_auth";
 

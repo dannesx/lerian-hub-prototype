@@ -13,15 +13,24 @@ import { APPS } from "@/lib/apps";
 // the wrapping flex centers a partial last row for any app count.
 
 /**
- * Sanitize a `returnTo` query value into a safe same-origin path. Only a value
- * starting with a single "/" (and not "//", which browsers treat as a
- * protocol-relative external URL) is honored — everything else, including
- * absolute URLs, defaults to "/". This blocks open-redirects through the
- * post-login navigation.
+ * Sanitize a `returnTo` query value into a safe same-origin path. A value is
+ * honored only when it is a string starting with "/" AND, once resolved against
+ * a fixed dummy origin, still resolves to that same origin. Resolving and
+ * comparing the origin is what makes this robust: it rejects `//host`, `/\host`
+ * (browsers normalize the backslash to `/`), `\\host`, scheme URLs, and any
+ * protocol-relative / absolute variant in one check — not a brittle blocklist.
+ * The honored value is rebuilt from the resolved `pathname + search + hash` so
+ * only the same-origin portion survives. Anything else defaults to "/".
  */
 function sanitizeReturnTo(raw: string | null): string {
-  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
-  return "/";
+  if (typeof raw !== "string" || !raw.startsWith("/")) return "/";
+  try {
+    const url = new URL(raw, "http://localhost");
+    if (url.origin !== "http://localhost") return "/";
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return "/";
+  }
 }
 
 /**

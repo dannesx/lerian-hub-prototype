@@ -34,6 +34,14 @@ describe("isPublicPath — public paths", () => {
     expect(isPublicPath("/_next/image")).toBe(true);
   });
 
+  it("treats /_next/data/* as public (proxy runs on these despite matcher exclusion)", () => {
+    // Next.js always invokes the proxy for /_next/data routes even when the
+    // matcher excludes them, so isPublicPath — the authoritative source — must
+    // classify them public, otherwise data fetches would 307 to /login.
+    expect(isPublicPath("/_next/data/build-id/tickets.json")).toBe(true);
+    expect(isPublicPath("/_next/data")).toBe(true);
+  });
+
   it("treats common root static assets as public", () => {
     expect(isPublicPath("/favicon.ico")).toBe(true);
     expect(isPublicPath("/robots.txt")).toBe(true);

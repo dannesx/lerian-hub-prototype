@@ -57,6 +57,8 @@ export interface AuthConfig {
   cookieDomain: string | undefined;
   /** Session lifetime in minutes, clamped to a minimum of 1. */
   sessionTtlMinutes: number;
+  /** Cookie `Secure` attribute. `false` only in development (no TLS); `true` everywhere else. */
+  cookieSecure: boolean;
   /** Google OAuth sub-config (present in both modes; only used in google mode). */
   google: GoogleAuthConfig;
 }
@@ -110,6 +112,10 @@ export function resolveAuthConfig(env: EnvSource): AuthConfig {
     jwtSecret: resolveJwtSecret(mode, env.HUB_JWT_SECRET),
     cookieDomain: env.HUB_COOKIE_DOMAIN || undefined,
     sessionTtlMinutes: parseSessionTtlMinutes(env.HUB_SESSION_TTL_MIN),
+    // Secure everywhere except local dev, where there is no TLS. Resolved here
+    // so cookies.ts never reads process.env (PROJECT_RULES: auth env reads live
+    // only in config.ts).
+    cookieSecure: env.NODE_ENV !== "development",
     google: {
       clientId: env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: env.GOOGLE_CLIENT_SECRET ?? "",

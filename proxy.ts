@@ -56,11 +56,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * Run the proxy on everything except Next internals and static assets, so it
- * never gates CSS/JS/images. `/api/auth/*` is reachable through the proxy (it's
- * handled as a public path above) rather than excluded here, so the gate stays
- * the single decision point. Static-looking root files are also allowed through
- * via `isPublicPath`.
+ * Performance pre-filter ONLY — `isPublicPath` (lib/auth/route-access.ts) is the
+ * AUTHORITATIVE public/protected decision. This matcher merely skips the proxy
+ * for obviously-static assets (CSS/JS/images) so it never gates them; it is not
+ * a second public list and must not be relied on for access decisions. Anything
+ * that does reach `proxy()` is classified by `isPublicPath`, which is the single
+ * source of truth. Note: per the Next.js docs, `/_next/data/*` runs through the
+ * proxy regardless of this matcher, so `isPublicPath` covers it via `/_next`.
  */
 export const config = {
   matcher: [

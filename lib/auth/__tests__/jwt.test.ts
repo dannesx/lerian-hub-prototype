@@ -91,6 +91,45 @@ describe("signSession / verifySession", () => {
     expect(await verifySession(expired)).toBeNull();
   });
 
+  it("returns null when a required claim is missing (no name)", async () => {
+    // Well-formed, correctly-signed token but with `name` omitted — the shape
+    // guard must reject it even though jose verifies the signature fine.
+    const secret = new TextEncoder().encode(authConfig.jwtSecret);
+    const { name: _name, ...withoutName } = identity;
+    void _name;
+    const token = await new SignJWT({ ...withoutName })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("1h")
+      .sign(secret);
+
+    expect(await verifySession(token)).toBeNull();
+  });
+
+  it("returns null when a required claim is the empty string (name)", async () => {
+    const secret = new TextEncoder().encode(authConfig.jwtSecret);
+    const token = await new SignJWT({ ...identity, name: "" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("1h")
+      .sign(secret);
+
+    expect(await verifySession(token)).toBeNull();
+  });
+
+  it("returns null when a required claim has the wrong type (initials as number)", async () => {
+    const secret = new TextEncoder().encode(authConfig.jwtSecret);
+    const { initials: _initials, ...rest } = identity;
+    void _initials;
+    const token = await new SignJWT({ ...rest, initials: 42 })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
+      .setExpirationTime("1h")
+      .sign(secret);
+
+    expect(await verifySession(token)).toBeNull();
+  });
+
   it("never throws — returns null instead", async () => {
     // A token signed with a different secret must not throw on verify.
     const wrongSecret = new TextEncoder().encode("a-completely-different-secret-value!!");

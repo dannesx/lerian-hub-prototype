@@ -185,6 +185,32 @@ describe("AuthProvider — cross-tab logout", () => {
     expect(replace).toHaveBeenCalledWith("/login");
   });
 
+  it("closes the BroadcastChannel on unmount", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(IDENTITY, 200));
+
+    const closed: string[] = [];
+    class FakeChannel {
+      name: string;
+      onmessage: ((e: MessageEvent) => void) | null = null;
+      constructor(name: string) {
+        this.name = name;
+      }
+      postMessage() {}
+      close() {
+        closed.push(this.name);
+      }
+    }
+    vi.stubGlobal("BroadcastChannel", FakeChannel);
+
+    const { result, unmount } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.session).toEqual(IDENTITY));
+
+    unmount();
+
+    // The cross-tab effect's cleanup must close the channel it opened.
+    expect(closed).toContain("hub_auth");
+  });
+
   it("ignores non-logout broadcast messages", async () => {
     fetchMock.mockResolvedValueOnce(jsonResponse(IDENTITY, 200));
 

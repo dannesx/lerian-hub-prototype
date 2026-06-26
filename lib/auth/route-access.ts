@@ -7,11 +7,17 @@
  * the interesting logic (public vs protected) is exhaustively unit-testable
  * without constructing a live NextRequest.
  *
+ * This predicate is the AUTHORITATIVE public/protected decision — the
+ * `config.matcher` in `proxy.ts` is only a performance pre-filter. Per the
+ * Next.js docs, `/_next/data/*` requests ALWAYS run through the proxy even when
+ * matcher-excluded, so they must be classified here; the `/_next` prefix below
+ * covers them.
+ *
  * Public surface:
  *   - `/login` (and any subpath) — the unauthenticated landing page.
  *   - `/api/auth` and `/api/auth/*` — login/me/logout must always be reachable
  *     so a logged-out browser can mint or clear a session.
- *   - `/_next/*` — Next.js internals (chunks, image optimizer).
+ *   - `/_next/*` — Next.js internals (chunks, image optimizer, `/_next/data`).
  *   - common root static files (favicon.ico, robots.txt, sitemap.xml).
  *
  * Boundaries are matched on path segments, not bare string prefixes, so

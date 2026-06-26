@@ -13,7 +13,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE } from "@/lib/auth/cookies";
-import { verifySession } from "@/lib/auth/jwt";
+import { toIdentity, verifySession } from "@/lib/auth/jwt";
 
 export async function GET(): Promise<NextResponse> {
   const cookieStore = await cookies();
@@ -25,8 +25,5 @@ export async function GET(): Promise<NextResponse> {
   }
 
   // Strip the timing claims — callers consume identity, not token internals.
-  const { iat, exp, ...identity } = session;
-  void iat;
-  void exp;
-  return NextResponse.json(identity);
+  return NextResponse.json(toIdentity(session));
 }

@@ -4,8 +4,8 @@
  * apply the returned options object to Next.js's cookie API; this module is
  * deliberately framework-agnostic and returns a plain object.
  *
- * Attributes mirror oc_token: httpOnly, sameSite "lax", path "/", secure
- * everywhere except development, Domain from `authConfig.cookieDomain`
+ * Attributes mirror oc_token: httpOnly, sameSite "lax", path "/", secure from
+ * `authConfig.cookieSecure` (false only in development), Domain from `authConfig.cookieDomain`
  * (undefined on localhost so the cookie scopes to the host), and maxAge from
  * the configured TTL. `clearCookieOptions()` is the same shape with maxAge 0 to
  * expire the cookie on logout.
@@ -30,8 +30,9 @@ export function sessionCookieOptions(): SessionCookieOptions {
   return {
     httpOnly: true,
     sameSite: "lax",
-    // Secure everywhere except local dev, where there is no TLS.
-    secure: process.env.NODE_ENV !== "development",
+    // Secure everywhere except local dev, where there is no TLS. Resolved in
+    // config.ts so this module never reads process.env directly.
+    secure: authConfig.cookieSecure,
     path: "/",
     domain: authConfig.cookieDomain,
     maxAge: authConfig.sessionTtlMinutes * 60,

@@ -109,12 +109,35 @@ describe("GET /api/auth/me", () => {
     await expect(res.json()).resolves.toEqual({ error: "Unauthorized" });
   });
 
-  it("returns 401 when the cookie holds a garbage token", async () => {
+  it("returns 401 with the Unauthorized body when the cookie holds a garbage token", async () => {
     jar.set(SESSION_COOKIE, "not-a-jwt");
     const { GET } = await import("@/app/api/auth/me/route");
     const res = await GET();
 
     expect(res.status).toBe(401);
+    await expect(res.json()).resolves.toEqual({ error: "Unauthorized" });
+  });
+
+  it("returns 401 for a well-formed but expired token", async () => {
+    // Craft a correctly-signed token that expired a minute ago using jose
+    // directly, then plant it in the cookie jar.
+    const { SignJWT } = await import("jose");
+    const { authConfig } = await import("@/lib/auth/config");
+    const { buildMockSession } = await import("@/lib/auth/mock-user");
+    const secret = new TextEncoder().encode(authConfig.jwtSecret);
+    const now = Math.floor(Date.now() / 1000);
+    const expired = await new SignJWT({ ...buildMockSession() })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt(now - 120)
+      .setExpirationTime(now - 60)
+      .sign(secret);
+    jar.set(SESSION_COOKIE, expired);
+
+    const { GET } = await import("@/app/api/auth/me/route");
+    const res = await GET();
+
+    expect(res.status).toBe(401);
+    await expect(res.json()).resolves.toEqual({ error: "Unauthorized" });
   });
 });
 

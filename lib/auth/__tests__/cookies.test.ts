@@ -8,13 +8,26 @@
  * maxAge from the configured TTL. `clearCookieOptions()` is the same shape with
  * maxAge 0 to expire the cookie.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   SESSION_COOKIE,
   sessionCookieOptions,
   clearCookieOptions,
 } from "@/lib/auth/cookies";
 import { authConfig } from "@/lib/auth/config";
+
+/**
+ * Re-import the cookies module under a stubbed NODE_ENV. `authConfig` resolves
+ * `cookieSecure` eagerly at module load from `process.env`, so we reset the
+ * module graph after stubbing the env to get a freshly-resolved config — this
+ * is the only way to exercise both branches of the secure flag genuinely.
+ */
+async function secureUnderNodeEnv(value: string): Promise<boolean> {
+  vi.resetModules();
+  vi.stubEnv("NODE_ENV", value);
+  const mod = await import("@/lib/auth/cookies");
+  return mod.sessionCookieOptions().secure;
+}
 
 describe("SESSION_COOKIE", () => {
   it("is the hub_token cookie name", () => {
@@ -33,10 +46,18 @@ describe("sessionCookieOptions", () => {
     expect(opts.domain).toBe(authConfig.cookieDomain);
   });
 
-  it("sets secure based on NODE_ENV (insecure only in development)", () => {
-    const opts = sessionCookieOptions();
-    expect(opts.secure).toBe(process.env.NODE_ENV !== "development");
+  it("is NOT secure in development (no TLS)", async () => {
+    expect(await secureUnderNodeEnv("development")).toBe(false);
   });
+
+  it("IS secure in production", async () => {
+    expect(await secureUnderNodeEnv("production")).toBe(true);
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.resetModules();
 });
 
 describe("clearCookieOptions", () => {

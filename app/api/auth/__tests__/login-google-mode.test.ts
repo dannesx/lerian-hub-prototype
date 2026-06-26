@@ -14,6 +14,7 @@ const googleConfig: AuthConfig = {
   jwtSecret: "a-google-mode-secret-at-least-thirty-two-chars",
   cookieDomain: undefined,
   sessionTtlMinutes: 60,
+  cookieSecure: true,
   google: {
     clientId: "",
     clientSecret: "",
